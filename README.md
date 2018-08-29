@@ -255,6 +255,85 @@ ObservableEmitter： Emitter是发射器的意思，那就很好猜了，这个�
 	D/TAG: I am value 2 
 	D/TAG: I am value 2
 这里也简单说一下concatMap吧, 它和flatMap的作用几乎一模一样, 只是它的结果是严格按照上游发送的顺序来发送的
+#教程四
+##Zip的使用
+
+	Zip通过一个函数将多个Observable发送的事件结合到一起，然后发送这些组合到一起的事件. 它按照严格的顺序应用这个函数。它只发射与发射数据项最少的那个Observable一样多的数据。
+
+ Observable<Integer> observable1 = Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+                Log.d(TAG, "emit 1");
+                emitter.onNext(1);
+                Log.d(TAG, "emit 2");
+                emitter.onNext(2);
+                Log.d(TAG, "emit 3");
+                emitter.onNext(3);
+                Log.d(TAG, "emit 4");
+                emitter.onNext(4);
+                Log.d(TAG, "emit complete1");
+                emitter.onComplete();
+            }
+        }).subscribeOn(Schedulers.io()); ;
+        Observable<String> observable2 = Observable.create(new ObservableOnSubscribe<String>() {
+            @Override
+            public void subscribe(ObservableEmitter<String> emitter) throws Exception {
+                Log.d(TAG, "emit A");
+                emitter.onNext("A");
+                Log.d(TAG, "emit B");
+                emitter.onNext("B");
+                Log.d(TAG, "emit C");
+                emitter.onNext("C");
+                Log.d(TAG, "emit complete2");
+                emitter.onComplete();
+            }
+        }).subscribeOn(Schedulers.io()); ;
+        Observable.zip(observable1, observable2, new BiFunction<Integer, String, String>() {
+            @Override
+            public String apply(Integer integer, String s) throws Exception {
+                return integer + s;
+            }
+        }).subscribe(new Observer<String>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+                Log.d(TAG, "onSubscribe");
+            }
+
+            @Override
+            public void onNext(String value) {
+                Log.d(TAG, "onNext: " + value);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                Log.d(TAG, "onError");
+            }
+
+            @Override
+            public void onComplete() {
+                Log.d(TAG, "onComplete");
+            }
+        });
+		D/TAG: onSubscribe 
+		D/TAG: emit A 
+		D/TAG: emit 1 
+		D/TAG: onNext: 1A 
+		D/TAG: emit B 
+		D/TAG: emit 2 
+		D/TAG: onNext: 2B
+		 D/TAG: emit C 
+		D/TAG: emit 3 
+		D/TAG: onNext: 3C 
+		D/TAG: emit complete2 
+		D/TAG: onComplete
+	.subscribeOn(Schedulers.io())让两个时间运行到不同线程，结果就会依次发送
+	这下就对了嘛, 两根水管同时开始发送, 每发送一个, Zip就组合一个, 再将组合结果发送给下游.
+	这是因为我们之前说了, zip发送的事件数量跟上游中发送事件最少的那一根水管的事件数量是有关的, 在这个例子里我们第二根水管只发送了三个事件然后就发送了Complete, 这个时候尽管第一根水管还有事件4 和事件Complete 没有发送, 但是它们发不发送还有什么意义呢? 所以本着节约是美德的思想, 就干脆打断它的狗腿, 不让它发了.
+	
+	
+
+
+
 
 
 
