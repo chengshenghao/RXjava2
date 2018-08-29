@@ -30,12 +30,13 @@ public class MainActivity extends AppCompatActivity {
         final ImageView imageView = (ImageView) findViewById(R.id.imageView);
         //基本使用
 //        case01();
+        //
 //        case02();
 //        case03();
         //线程控制
-//        case04();
+        case04();
         //变换
-        case05();
+//        case05();
     }
 
     //只是将之前的flatMap改为了concatMap, 就可以保证事件的顺序
@@ -198,4 +199,8 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
     }
+
+
+
+
 }
