@@ -39,7 +39,83 @@ public class MainActivity extends AppCompatActivity {
         //变换
 //        case05();
         //zip
-        case06();
+//        case06();
+        //背压Backpressure
+//        case07();
+        //内存未发生明显变化，由于在同一线程处理事件，没有中间水缸
+//        case08();
+        //内存发生明显变化，由于在在不同线程处理事件，上游发送的事件下游不能及时处理，需要容器，因此会导致OOM
+        case09();
+    }
+
+    private void case09() {
+        Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+                for (int i = 0; ; i++) { //无限循环发事件
+                    emitter.onNext(i);
+                }
+            }
+        }).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new Consumer<Integer>() {
+            @Override
+            public void accept(Integer integer) throws Exception {
+                Thread.sleep(2000);
+                Log.d(TAG, "" + integer);
+            }
+        });
+
+    }
+
+    private void case08() {
+        Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+                for (int i = 0; ; i++) { //无限循环发事件
+                    emitter.onNext(i);
+                }
+            }
+        }).subscribe(new Consumer<Integer>() {
+            @Override
+            public void accept(Integer integer) throws Exception {
+                Thread.sleep(2000);
+                Log.d(TAG, "" + integer);
+            }
+        });
+
+    }
+
+    private void case07() {
+        Observable<Integer> observable1 = Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+                for (int i = 0; ; i++) {
+                    //无限循环发事件
+                    emitter.onNext(i);
+                }
+            }
+        }).subscribeOn(Schedulers.io());
+        Observable<String> observable2 = Observable.create(new ObservableOnSubscribe<String>() {
+            @Override
+            public void subscribe(ObservableEmitter<String> emitter) throws Exception {
+                emitter.onNext("A");
+            }
+        }).subscribeOn(Schedulers.io());
+        Observable.zip(observable1, observable2, new BiFunction<Integer, String, String>() {
+            @Override
+            public String apply(Integer integer, String s) throws Exception {
+                return integer + s;
+            }
+        }).observeOn(AndroidSchedulers.mainThread()).subscribe(new Consumer<String>() {
+            @Override
+            public void accept(String s) throws Exception {
+                Log.d(TAG, s);
+            }
+        }, new Consumer<Throwable>() {
+            @Override
+            public void accept(Throwable throwable) throws Exception {
+                Log.w(TAG, throwable);
+            }
+        });
     }
 
     private void case06() {
@@ -57,7 +133,8 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "emit complete1");
                 emitter.onComplete();
             }
-        }).subscribeOn(Schedulers.io()); ;
+        }).subscribeOn(Schedulers.io());
+        ;
         Observable<String> observable2 = Observable.create(new ObservableOnSubscribe<String>() {
             @Override
             public void subscribe(ObservableEmitter<String> emitter) throws Exception {
@@ -70,7 +147,8 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG, "emit complete2");
                 emitter.onComplete();
             }
-        }).subscribeOn(Schedulers.io()); ;
+        }).subscribeOn(Schedulers.io());
+        ;
         Observable.zip(observable1, observable2, new BiFunction<Integer, String, String>() {
             @Override
             public String apply(Integer integer, String s) throws Exception {
