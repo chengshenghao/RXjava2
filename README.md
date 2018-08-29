@@ -202,6 +202,62 @@ ObservableEmitter： Emitter是发射器的意思，那就很好猜了，这个�
 	
 	那如果有多个Disposable 该怎么办呢, RxJava中已经内置了一个容器CompositeDisposable, 每当我们得到一个Disposable时就调用CompositeDisposable.add()将它添加到容器中, 在退出的时候, 调用CompositeDisposable.clear() 即可切断所有的水管.
 
+#教程三
+## Map
+	map是RxJava中最简单的一个变换操作符了, 它的作用就是对上游发送的每一个事件应用一个函数, 使得每一个事件都按照指定的函数去变化. 用事件图表示如下:
+	Observable.create(new ObservableOnSubscribe<Integer>(){
+        @Override public void subscribe (ObservableEmitter < Integer > emitter) throws Exception {
+        emitter.onNext(1);
+        emitter.onNext(2);
+        emitter.onNext(3);
+    }
+    }).map(new Function<Integer, String>() {
+        @Override public String apply (Integer integer) throws Exception {
+            return "This is result " + integer;
+        }
+    }).subscribe(new Consumer<String>() {
+        @Override public void accept (String s) throws Exception {
+            Log.d(TAG, s);
+        }
+    });
+	D/TAG: This is result 1 
+ 	D/TAG: This is result 2 
+	D/TAG: This is result 3 
+##FlatMap
+	flatMap是一个非常强大的操作符, 先用一个比较难懂的概念说明一下:
+	FlatMap将一个发送事件的上游Observable变换为多个发送事件的Observables，然后将它们发射的事件合并后放进一个单独的Observable里.
+	Observable.create(new ObservableOnSubscribe<Integer>(){
+        @Override public void subscribe (ObservableEmitter < Integer > emitter) throws Exception {
+        emitter.onNext(1);
+        emitter.onNext(2);
+        emitter.onNext(3);
+    }
+    }).flatMap(new Function<Integer, ObservableSource<String>>() {
+        @Override public ObservableSource<String> apply (Integer integer) throws Exception {
+            final List<String> list = new ArrayList<>();
+            for (int i = 0; i < 3; i++) {
+                list.add("I am value " + integer);
+            }
+            return Observable.fromIterable(list).delay(10, TimeUnit.MILLISECONDS);
+        }
+    }).subscribe(new Consumer<String>() {
+        @Override public void accept (String s) throws Exception {
+            Log.d(TAG, s);
+        }
+    });
+	D/TAG: I am value 1 
+	D/TAG: I am value 1 
+	D/TAG: I am value 1 
+	D/TAG: I am value 3 
+	D/TAG: I am value 3 
+	D/TAG: I am value 3 
+	D/TAG: I am value 2 
+	D/TAG: I am value 2 
+	D/TAG: I am value 2
+这里也简单说一下concatMap吧, 它和flatMap的作用几乎一模一样, 只是它的结果是严格按照上游发送的顺序来发送的
+
+
+
 
 
 
