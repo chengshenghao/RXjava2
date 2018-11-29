@@ -9,6 +9,20 @@ android {
         versionCode VERSION_CODE as int
         versionName VERSION_NAME
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        // 自定义打包apk名称
+        android.applicationVariants.all { variant ->
+            variant.outputs.all { output ->
+                def outputFile = output.outputFile
+                def buildTypeName = variant.buildType.name
+                //是否为Jenkins打包，输出路径不同
+                if (outputFile != null && outputFile.name.endsWith('.apk')) {
+                    // 版本名称
+                    def versionName = defaultConfig.versionName
+                    //BUILD_PATH为服务器输出路径
+                    outputFileName = APPNAME + "_v" + versionName + "_" + buildTypeName + ".apk"
+                }
+            }
+        }
     }
     buildTypes {
         release {
