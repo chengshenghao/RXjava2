@@ -1,9 +1,13 @@
 package com.example.csh.rxjava;
 
+import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +33,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         final ImageView imageView = (ImageView) findViewById(R.id.imageView);
+        TextView textView = (TextView) findViewById(R.id.tv);
+        textView.setText("版本名称"+getVersionName(this)+"版本号"+getVersionCode(this));
+
         //基本使用
 //        case01();
         //
@@ -451,5 +458,28 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
+    //获取版本名
+    public String getVersionName(Context context) {
+        return getPackageInfo(context).versionName;
+    }
 
+    //获取版本号
+    public int getVersionCode(Context context) {
+        return getPackageInfo(context).versionCode;
+    }
+
+    //通过PackageInfo得到的想要启动的应用的包名
+    private static PackageInfo getPackageInfo(Context context) {
+        PackageInfo pInfo = null;
+        try {
+            //通过PackageManager可以得到PackageInfo
+            PackageManager pManager = context.getPackageManager();
+            pInfo = pManager.getPackageInfo(context.getPackageName(),
+                    PackageManager.GET_CONFIGURATIONS);
+            return pInfo;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return pInfo;
+    }
 }
