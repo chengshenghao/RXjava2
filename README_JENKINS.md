@@ -17,3 +17,8 @@
     的gradle.properties中配置到的参数。下面是我这个项目所用的build.gradle脚本的代码：
 - 1 根据构建参数打出不同版本apk(参考图片5、6、7)
 - 2 根据BUILD_TYPE打出正式及测试包（参考图片8、9）
+- 3 安装插件
+        build-name-setter（修改显示名称参考图片10）
+### 4.移动文件位置及添加下载按钮
+    <br><a href='http://192.168.11.146:8080/downloadApk/${BUILD_TIME}/${APPNAME}_v${VERSION}_${BUILD_TYPE}.apk'>
+    点击下载-V${VERSION}.apk</a>（参考图片11）
