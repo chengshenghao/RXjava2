@@ -5,19 +5,32 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
+import io.reactivex.BackpressureStrategy;
+import io.reactivex.Flowable;
+import io.reactivex.FlowableEmitter;
+import io.reactivex.FlowableOnSubscribe;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
+import io.reactivex.Single;
+import io.reactivex.SingleEmitter;
+import io.reactivex.SingleObserver;
+import io.reactivex.SingleOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
@@ -34,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         final ImageView imageView = (ImageView) findViewById(R.id.imageView);
         TextView textView = (TextView) findViewById(R.id.tv);
-        textView.setText("版本名称"+getVersionName(this)+"版本号"+getVersionCode(this));
+        textView.setText("版本名称" + getVersionName(this) + "版本号" + getVersionCode(this));
 
         //基本使用
 //        case01();
@@ -59,8 +72,154 @@ public class MainActivity extends AppCompatActivity {
 //        case10();
         //这次我们让上游每次发送完事件后都延时了2秒,
 //        case11();
-        case12();
-        case13();
+//        case12();
+//        case13();
+//        case14();
+        //操作符
+//        case15();
+        case16();
+    }
+
+    /**
+     * 创建操作符
+     */
+    int i = 1;
+    private void case16() {
+        //creat just fromArray略
+        // 设置一个集合
+        List<Integer> list = new ArrayList<>();
+        list.add(1);
+        list.add(2);
+        list.add(3);
+        Observable.fromIterable(list).subscribe(new Consumer<Integer>() {
+
+            @Override
+            public void accept(Integer integer) throws Exception {
+                Log.i(TAG, "accept: "+integer);
+            }
+        });
+//        通过defer 定义被观察者对象
+        // 注：此时被观察者对象还没创建，开始订阅之后才会被创建
+        Observable observable = Observable.defer(new Callable<ObservableSource<?>>() {
+            @Override
+            public ObservableSource<?> call() throws Exception {
+                return  Observable.just(i);
+            }
+        });
+        i =2;
+        // 注：此时，才会调用defer（）创建被观察者对象（Observable）
+//        observable.subscribe(new Consumer() {
+//            @Override
+//            public void accept(Object o) throws Exception {
+//                Log.i(TAG, "接收到数据: "+o);
+//            }
+//        });
+//        observable.timer(2, TimeUnit.SECONDS).subscribe(new Consumer<Long>() {
+//            @Override
+//            public void accept(Long aLong) throws Exception {
+//                Log.i(TAG, "accept: "+aLong);
+//            }
+//        });
+
+//        快速创建1个被观察者对象（Observable）
+//        发送事件的特点：每隔指定时间 就发送 事件
+//        observable.interval(2,TimeUnit.SECONDS).subscribe(new Consumer<Long>() {
+//            @Override
+//            public void accept(Long aLong) throws Exception {
+//                Log.i(TAG, "accept: "+aLong);
+//            }
+//        });
+
+//        快速创建1个被观察者对象（Observable）
+//        发送事件的特点：每隔指定时间 就发送 事件，可指定发送的数据的数量
+//        observable.intervalRange(1,10,5,1,TimeUnit.SECONDS).subscribe(new Consumer<Long>() {
+//            @Override
+//            public void accept(Long aLong) throws Exception {
+//                Log.i(TAG, "accept: "+aLong);
+//            }
+//        });
+
+
+//        快速创建1个被观察者对象（Observable）
+//        发送事件的特点：连续发送 1个事件序列，可指定范围
+//        observable.range(1,20).subscribe(new Consumer<Integer>() {
+//            @Override
+//            public void accept(Integer integer) throws Exception {
+//                Log.i(TAG, "accept: "+integer);
+//            }
+//        });
+//        rangeLong（）
+//        作用：类似于range（），区别在于该方法支持数据类型 = Long
+//        具体使用
+//        与range（）类似，此处不作过多描述
+
+    }
+
+//    private void case15() {
+//        SingleObserver<String> observerSingle = new SingleObserver<String>() {
+//            @Override
+//            public void onSubscribe(Disposable d) {
+//
+//            }
+//
+//            @Override
+//            public void onSuccess(String value) {
+//
+//            }
+//
+//            @Override
+//            public void onError(Throwable e) {
+//
+//            }
+//        };
+//        Single.create(new SingleOnSubscribe<Object>() {
+//            @Override
+//            public void subscribe(SingleEmitter<Object> e) throws Exception {
+//
+//            }
+//        }).subscribe((Consumer<? super Object>) observerSingle);
+
+//    }
+
+
+    private void case14() {
+
+        Flowable flowable = Flowable.create((emitter) -> {
+            Log.d(TAG, "emit 1");
+            emitter.onNext(1);
+            Log.d(TAG, "emit 2");
+            emitter.onNext(2);
+            Log.d(TAG, "emit 3");
+            emitter.onNext(3);
+            Log.d(TAG, "emit complete");
+            emitter.onComplete();
+        }, BackpressureStrategy.ERROR);
+        Subscriber<Integer> downstream = new Subscriber<Integer>() {
+
+            @Override
+            public void onSubscribe(Subscription s) {
+                Log.d(TAG, "onSubscribe");
+                s.request(Long.MAX_VALUE);  //注意这句代码
+            }
+
+            @Override
+            public void onNext(Integer integer) {
+                Log.d(TAG, "onNext: " + integer);
+
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                Log.w(TAG, "onError: ", t);
+            }
+
+            @Override
+            public void onComplete() {
+                Log.d(TAG, "onComplete");
+            }
+        };
+
+        flowable.subscribe(downstream);
     }
 
     private void case13() {
@@ -426,36 +585,121 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void case01() {
-        Observable.create(new ObservableOnSubscribe<Integer>() {
+        Observable.create((ObservableEmitter<Integer> emitter) -> {//改为lambda方式
+            emitter.onNext(4);
+            emitter.onNext(5);
+            emitter.onNext(6);
+        }).subscribe(new Observer<Integer>() {
             @Override
-            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
-                emitter.onNext(1);
-                emitter.onNext(2);
-                emitter.onNext(3);
-                emitter.onComplete();
+            public void onSubscribe(Disposable d) {
+                Log.d(TAG, "subscribe");
             }
-        })
-                .subscribe(new Observer<Integer>() {
-                    @Override
-                    public void onSubscribe(Disposable d) {
-                        Log.d(TAG, "subscribe");
-                    }
 
-                    @Override
-                    public void onNext(Integer value) {
-                        Log.d(TAG, "" + value);
-                    }
+            @Override
+            public void onNext(Integer value) {
+                Log.d(TAG, "" + value);
+            }
 
-                    @Override
-                    public void onError(Throwable e) {
-                        Log.d(TAG, "error");
-                    }
+            @Override
+            public void onError(Throwable e) {
+                Log.d(TAG, "error");
+            }
 
-                    @Override
-                    public void onComplete() {
-                        Log.d(TAG, "complete");
-                    }
-                });
+            @Override
+            public void onComplete() {
+                Log.d(TAG, "complete");
+            }
+        });
+//        Observable.create(new ObservableOnSubscribe<Integer>() {
+//            @Override
+//            public void subscribe(ObservableEmitter<Integer> emitter) throws Exception {
+//                emitter.onNext(1);
+//                emitter.onNext(2);
+//                emitter.onNext(3);
+//                emitter.onComplete();
+//            }
+//        })
+//                .subscribe(new Observer<Integer>() {
+//                    @Override
+//                    public void onSubscribe(Disposable d) {
+//                        Log.d(TAG, "subscribe");
+//                    }
+//
+//                    @Override
+//                    public void onNext(Integer value) {
+//                        Log.d(TAG, "" + value);
+//                    }
+//
+//                    @Override
+//                    public void onError(Throwable e) {
+//                        Log.d(TAG, "error");
+//                    }
+//
+//                    @Override
+//                    public void onComplete() {
+//                        Log.d(TAG, "complete");
+//                    }
+//                });
+        //方法1：just(T...)：直接将传入的参数依次发送出来
+        Observable<String>observable =Observable.just("a","b","c");
+        observable.subscribe(new Observer<String>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+
+            }
+
+            @Override
+            public void onNext(String value) {
+                Log.i(TAG, "onNext: "+value);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+        String[] words = {"A", "B", "C"};
+        Observable.fromArray(words).subscribe(new Observer<String>() {
+
+            private Disposable disposable;
+
+            @Override
+            public void onSubscribe(Disposable d) {
+                disposable = d;
+
+            }
+
+            @Override
+            public void onNext(String value) {
+                Log.i(TAG,value);
+                if(value.equals("B")){
+                    //可采用 Disposable.dispose() 切断观察者 与 被观察者 之间的连接
+                    disposable.dispose();
+                }
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
+//        以 Consumer为例：实现简便式的观察者模式
+        Observable.just("hello").subscribe(new Consumer<String>() {
+            @Override
+            public void accept(String s) throws Exception {
+                Log.i(TAG, "accept: "+s);
+            }
+        });
     }
 
     //获取版本名
