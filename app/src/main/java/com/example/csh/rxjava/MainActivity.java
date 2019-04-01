@@ -10,6 +10,10 @@ import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.example.csh.rxjava.bean.Translation;
+import com.example.csh.rxjava.http.GetRequest_Interface;
+import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
+
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
@@ -37,6 +41,8 @@ import io.reactivex.functions.BiFunction;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "rxandroid";
@@ -78,6 +84,77 @@ public class MainActivity extends AppCompatActivity {
         //操作符
 //        case15();
         case16();
+        case17();
+    }
+
+    /**
+     * 网络请求轮训
+     */
+    private void case17() {
+        Observable.interval(2,1,TimeUnit.SECONDS)
+                .doOnNext(new Consumer<Long>() {
+                    @Override
+                    public void accept(Long aLong) throws Exception {
+                        Log.i(TAG, " 第"+aLong+"次轮询");
+                        //进行网络请求
+                        Retrofit retrofit = new Retrofit.Builder()
+                                .baseUrl("http://fy.iciba.com/") // 设置 网络请求 Url
+                                .addConverterFactory(GsonConverterFactory.create()) //设置使用Gson解析(记得加入依赖)
+                                .addCallAdapterFactory(RxJava2CallAdapterFactory.create()) // 支持RxJava
+                                .build();
+
+                        // b. 创建 网络请求接口 的实例
+                        GetRequest_Interface request = retrofit.create(GetRequest_Interface.class);
+
+                        // c. 采用Observable<...>形式 对 网络请求 进行封装
+                        Observable<Translation> observable = request.getCall();
+                        // d. 通过线程切换发送网络请求
+                        observable.subscribeOn(Schedulers.io())               // 切换到IO线程进行网络请求
+                                .observeOn(AndroidSchedulers.mainThread())  // 切换回到主线程 处理请求结果
+                                .subscribe(new Observer<Translation>() {
+                                    @Override
+                                    public void onSubscribe(Disposable d) {
+                                    }
+
+                                    @Override
+                                    public void onNext(Translation result) {
+                                        // e.接收服务器返回的数据
+                                        result.show() ;
+                                    }
+
+                                    @Override
+                                    public void onError(Throwable e) {
+                                        Log.d(TAG, "请求失败");
+                                    }
+
+                                    @Override
+                                    public void onComplete() {
+
+                                    }
+                                });
+
+                    }
+                }).subscribe(new Observer<Long>() {
+            @Override
+            public void onSubscribe(Disposable d) {
+
+            }
+
+            @Override
+            public void onNext(Long value) {
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+
+            }
+
+            @Override
+            public void onComplete() {
+
+            }
+        });
     }
 
     /**
