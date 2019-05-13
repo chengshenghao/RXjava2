@@ -5,44 +5,33 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.example.csh.rxjava.bean.Translation;
-import com.example.csh.rxjava.http.GetRequest_Interface;
-import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
+import com.example.csh.rxjava.operator.Change;
+import com.example.csh.rxjava.operator.Operator;
 
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
-import io.reactivex.FlowableEmitter;
-import io.reactivex.FlowableOnSubscribe;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
-import io.reactivex.Single;
-import io.reactivex.SingleEmitter;
-import io.reactivex.SingleObserver;
-import io.reactivex.SingleOnSubscribe;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "rxandroid";
@@ -81,183 +70,20 @@ public class MainActivity extends AppCompatActivity {
 //        case12();
 //        case13();
 //        case14();
-        //操作符
-//        case15();
-        case16();
-        case17();
+
+        //创建操作符
+//        Operator.base();
+//        Operator.just();
+//        Operator.fromArray();
+//        Operator.OtherCreat();
+//        Operator.netWorkDemo();
+
+        //变换操作符
+//        Change.map();
+        Change.flatMap();
+
+        //组合合并操作符使用较少暂不学习使用
     }
-
-    /**
-     * 网络请求轮训
-     */
-    private void case17() {
-        Observable.interval(2,1,TimeUnit.SECONDS)
-                .doOnNext(new Consumer<Long>() {
-                    @Override
-                    public void accept(Long aLong) throws Exception {
-                        Log.i(TAG, " 第"+aLong+"次轮询");
-                        //进行网络请求
-                        Retrofit retrofit = new Retrofit.Builder()
-                                .baseUrl("http://fy.iciba.com/") // 设置 网络请求 Url
-                                .addConverterFactory(GsonConverterFactory.create()) //设置使用Gson解析(记得加入依赖)
-                                .addCallAdapterFactory(RxJava2CallAdapterFactory.create()) // 支持RxJava
-                                .build();
-
-                        // b. 创建 网络请求接口 的实例
-                        GetRequest_Interface request = retrofit.create(GetRequest_Interface.class);
-
-                        // c. 采用Observable<...>形式 对 网络请求 进行封装
-                        Observable<Translation> observable = request.getCall();
-                        // d. 通过线程切换发送网络请求
-                        observable.subscribeOn(Schedulers.io())               // 切换到IO线程进行网络请求
-                                .observeOn(AndroidSchedulers.mainThread())  // 切换回到主线程 处理请求结果
-                                .subscribe(new Observer<Translation>() {
-                                    @Override
-                                    public void onSubscribe(Disposable d) {
-                                    }
-
-                                    @Override
-                                    public void onNext(Translation result) {
-                                        // e.接收服务器返回的数据
-                                        result.show() ;
-                                    }
-
-                                    @Override
-                                    public void onError(Throwable e) {
-                                        Log.d(TAG, "请求失败");
-                                    }
-
-                                    @Override
-                                    public void onComplete() {
-
-                                    }
-                                });
-
-                    }
-                }).subscribe(new Observer<Long>() {
-            @Override
-            public void onSubscribe(Disposable d) {
-
-            }
-
-            @Override
-            public void onNext(Long value) {
-
-            }
-
-            @Override
-            public void onError(Throwable e) {
-
-            }
-
-            @Override
-            public void onComplete() {
-
-            }
-        });
-    }
-
-    /**
-     * 创建操作符
-     */
-    int i = 1;
-    private void case16() {
-        //creat just fromArray略
-        // 设置一个集合
-        List<Integer> list = new ArrayList<>();
-        list.add(1);
-        list.add(2);
-        list.add(3);
-        Observable.fromIterable(list).subscribe(new Consumer<Integer>() {
-
-            @Override
-            public void accept(Integer integer) throws Exception {
-                Log.i(TAG, "accept: "+integer);
-            }
-        });
-//        通过defer 定义被观察者对象
-        // 注：此时被观察者对象还没创建，开始订阅之后才会被创建
-        Observable observable = Observable.defer(new Callable<ObservableSource<?>>() {
-            @Override
-            public ObservableSource<?> call() throws Exception {
-                return  Observable.just(i);
-            }
-        });
-        i =2;
-        // 注：此时，才会调用defer（）创建被观察者对象（Observable）
-//        observable.subscribe(new Consumer() {
-//            @Override
-//            public void accept(Object o) throws Exception {
-//                Log.i(TAG, "接收到数据: "+o);
-//            }
-//        });
-//        observable.timer(2, TimeUnit.SECONDS).subscribe(new Consumer<Long>() {
-//            @Override
-//            public void accept(Long aLong) throws Exception {
-//                Log.i(TAG, "accept: "+aLong);
-//            }
-//        });
-
-//        快速创建1个被观察者对象（Observable）
-//        发送事件的特点：每隔指定时间 就发送 事件
-//        observable.interval(2,TimeUnit.SECONDS).subscribe(new Consumer<Long>() {
-//            @Override
-//            public void accept(Long aLong) throws Exception {
-//                Log.i(TAG, "accept: "+aLong);
-//            }
-//        });
-
-//        快速创建1个被观察者对象（Observable）
-//        发送事件的特点：每隔指定时间 就发送 事件，可指定发送的数据的数量
-//        observable.intervalRange(1,10,5,1,TimeUnit.SECONDS).subscribe(new Consumer<Long>() {
-//            @Override
-//            public void accept(Long aLong) throws Exception {
-//                Log.i(TAG, "accept: "+aLong);
-//            }
-//        });
-
-
-//        快速创建1个被观察者对象（Observable）
-//        发送事件的特点：连续发送 1个事件序列，可指定范围
-//        observable.range(1,20).subscribe(new Consumer<Integer>() {
-//            @Override
-//            public void accept(Integer integer) throws Exception {
-//                Log.i(TAG, "accept: "+integer);
-//            }
-//        });
-//        rangeLong（）
-//        作用：类似于range（），区别在于该方法支持数据类型 = Long
-//        具体使用
-//        与range（）类似，此处不作过多描述
-
-    }
-
-//    private void case15() {
-//        SingleObserver<String> observerSingle = new SingleObserver<String>() {
-//            @Override
-//            public void onSubscribe(Disposable d) {
-//
-//            }
-//
-//            @Override
-//            public void onSuccess(String value) {
-//
-//            }
-//
-//            @Override
-//            public void onError(Throwable e) {
-//
-//            }
-//        };
-//        Single.create(new SingleOnSubscribe<Object>() {
-//            @Override
-//            public void subscribe(SingleEmitter<Object> e) throws Exception {
-//
-//            }
-//        }).subscribe((Consumer<? super Object>) observerSingle);
-
-//    }
-
 
     private void case14() {
 
@@ -718,7 +544,7 @@ public class MainActivity extends AppCompatActivity {
 //                    }
 //                });
         //方法1：just(T...)：直接将传入的参数依次发送出来
-        Observable<String>observable =Observable.just("a","b","c");
+        Observable<String> observable = Observable.just("a", "b", "c");
         observable.subscribe(new Observer<String>() {
             @Override
             public void onSubscribe(Disposable d) {
@@ -727,7 +553,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onNext(String value) {
-                Log.i(TAG, "onNext: "+value);
+                Log.i(TAG, "onNext: " + value);
             }
 
             @Override
@@ -753,8 +579,8 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onNext(String value) {
-                Log.i(TAG,value);
-                if(value.equals("B")){
+                Log.i(TAG, value);
+                if (value.equals("B")) {
                     //可采用 Disposable.dispose() 切断观察者 与 被观察者 之间的连接
                     disposable.dispose();
                 }
@@ -774,7 +600,7 @@ public class MainActivity extends AppCompatActivity {
         Observable.just("hello").subscribe(new Consumer<String>() {
             @Override
             public void accept(String s) throws Exception {
-                Log.i(TAG, "accept: "+s);
+                Log.i(TAG, "accept: " + s);
             }
         });
     }
