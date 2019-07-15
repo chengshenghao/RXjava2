@@ -29,7 +29,49 @@ public class MainActivity extends AppCompatActivity {
 //        case02();
 //        case03();
 //        case04();
-        case05();
+//        case05();
+        case06();
+    }
+
+    /**
+     * 条件、布尔操作符
+     */
+    private void case06() {
+        //all 判断发送的每项数据是否都满足 设置的函数条件
+        Observable.just(1, 2, 3, 34)
+                .all(new Predicate<Integer>() {
+                    @Override
+                    public boolean test(Integer integer) throws Exception {
+                        return integer < 10;
+                    }
+                }).subscribe(new Consumer<Boolean>() {
+            @Override
+            public void accept(Boolean aBoolean) throws Exception {
+                Log.i(TAG, "accept: " + aBoolean);
+            }
+        });
+        //takeWhile 判断发送的每项数据是否满足 设置函数条件
+        Observable.interval(1, TimeUnit.SECONDS)
+                .takeWhile(new Predicate<Long>() {
+                    @Override
+                    public boolean test(Long aLong) throws Exception {
+                        return aLong < 3;
+                    }
+                }).subscribe(new Consumer<Long>() {
+            @Override
+            public void accept(Long aLong) throws Exception {
+                Log.i(TAG, "accept: " + aLong);
+            }
+        });
+        //skipWhile() 判断发送的每项数据是否满足 设置函数条件   直到该判断条件 = false时，才开始发送Observable的数据
+        //takeUntil() 执行到某个条件时，停止发送事件
+        //skipUntil() 等到 skipUntil（） 传入的Observable开始发送数据，（原始）第1个Observable的数据才开始发送数据
+        //SequenceEqual()   判定两个Observables需要发送的数据是否相同   若相同，返回 true；否则，返回 false
+        //contains() 判断发送的数据中是否包含指定数据
+        //isEmpty()  判断发送的数据是否为空
+        //amb()  当需要发送多个 Observable时，只发送 先发送数据的Observable的数据，而其余 Observable则被丢弃。
+        //defaultIfEmpty()  在不发送任何有效事件（ Next事件）、仅发送了 Complete 事件的前提下，发送一个默认值
+
     }
 
     /**
