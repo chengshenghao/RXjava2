@@ -5,7 +5,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
-import java.util.concurrent.Callable;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observable;
@@ -16,6 +16,7 @@ import io.reactivex.Observer;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
+import io.reactivex.functions.Predicate;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "rxandroid";
@@ -25,7 +26,112 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 //        case01();
-        case02();
+//        case02();
+//        case03();
+//        case04();
+        case05();
+    }
+
+    /**
+     * 过滤操作符
+     */
+    private void case05() {
+        //filter()过滤 特定条件的事件
+        Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> e) throws Exception {
+                e.onNext(1);
+                e.onNext(2);
+                e.onNext(3);
+                e.onNext(4);
+            }
+        }).filter(new Predicate<Integer>() {
+            @Override
+            public boolean test(Integer integer) throws Exception {
+                return integer > 3;
+            }
+        }).subscribe(new Consumer<Integer>() {
+            @Override
+            public void accept(Integer integer) throws Exception {
+                Log.i(TAG, "accept: " + integer);
+            }
+        });
+        //ofType 过滤 特定数据类型的数据
+        Observable.just("1", 2, 3)
+                .ofType(Integer.class)
+                .subscribe(new Consumer<Integer>() {
+                    @Override
+                    public void accept(Integer integer) throws Exception {
+                        Log.i(TAG, "accept: " + integer);
+                    }
+                });
+        //skip（） / skipLast（）跳过某个事件
+
+        //distinct（） / distinctUntilChanged（）过滤事件序列中重复的事件 / 连续重复的事件
+        Observable.just(1, 1, 1, 2, 3, 4, 5, 6)
+                .distinct()
+                .subscribe(new Consumer<Integer>() {
+                    @Override
+                    public void accept(Integer integer) throws Exception {
+                        Log.i(TAG, "accept: " + integer);
+                    }
+                });
+        //take（） & takeLast（）通过设置指定的事件数量，仅发送特定数量的事件
+        //throttleFirst（）/ throttleLast（）在某段时间内，只发送该段时间内第1次事件 / 最后1次事件
+        //Sample（）在某段时间内，只发送该段时间内最新（最后）1次事件
+
+        //throttleWithTimeout （） / debounce（）发送数据事件时，若2次发送事件的间隔＜指定时间，
+        //就会丢弃前一次的数据，直到指定时间内都没有新数据发射时才会发送后一次的数据
+
+        //firstElement（） / lastElement（）仅选取第1个元素 / 最后一个元素
+        //elementAt（） 指定接收某个元素（通过 索引值 确定）
+        //elementAtOrError（）在elementAt（）的基础上，当出现越界情况（即获取的位置索引 ＞ 发送事件序列长度）时，即抛出异常
+    }
+
+
+    /**
+     * 功能性操作符（不再赘述）
+     */
+    private void case04() {
+
+    }
+
+    /**
+     * 组合、合并数据(暂时不学习)
+     */
+    private void case03() {
+        //concat()组合多个被观察者一起发送数据，合并后 按发送顺序串行执行
+        //二者区别：组合被观察者的数量，即concat（）组合被观察者数量≤4个，而concatArray（）则可＞4个
+        Observable.concat(Observable.just(1),
+                Observable.just(2),
+                Observable.just(3),
+                Observable.just(4))
+                .subscribe(new Consumer<Integer>() {
+                    @Override
+                    public void accept(Integer integer) throws Exception {
+                        Log.i(TAG, "accept: " + integer);
+                    }
+                });
+        //merge（） / mergeArray（）组合多个被观察者一起发送数据，合并后 按时间线并行执行
+        //collect()将被观察者Observable发送的数据事件收集到一个数据结构里
+        Observable.just("1", "2", "3")
+                .collect(() -> new ArrayList(), (arrayList, o) -> arrayList.add(o))
+                .subscribe(new Consumer<ArrayList>() {
+                    @Override
+                    public void accept(ArrayList arrayList) throws Exception {
+                        Log.i(TAG, "accept: " + arrayList);
+                    }
+                });
+        //count()统计被观察者发送事件的数量
+        Observable.just(1, 2, 3, 4, 5)
+                .count()
+                .subscribe(new Consumer<Long>() {
+                    @Override
+                    public void accept(Long aLong) throws Exception {
+                        Log.i(TAG, "发送的事件数量 =  " + aLong);
+
+                    }
+                });
     }
 
     /**
