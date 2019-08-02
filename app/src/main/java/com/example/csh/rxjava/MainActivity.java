@@ -6,6 +6,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observable;
@@ -13,10 +15,12 @@ import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
+import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
+import io.reactivex.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "rxandroid";
@@ -26,11 +30,38 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 //        case01();
-//        case02();
+        case02();
 //        case03();
 //        case04();
 //        case05();
-        case06();
+//        case06();
+//        case07();
+    }
+
+    /**
+     * 背压策略
+     * 解决了 因被观察者发送事件速度 与 观察者接收事件速度 不匹配（一般是前者 快于 后者），
+     * 从而导致观察者无法及时响应 / 处理所有 被观察者发送事件 的问题
+     */
+    private void case07() {
+        Observable.create(new ObservableOnSubscribe<Integer>() {
+            @Override
+            public void subscribe(ObservableEmitter<Integer> e) throws Exception {
+                for (int i = 0; i < 3000; i++) {
+                    e.onNext(i);
+                    Thread.sleep(5000);
+                }
+            }
+        }).subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Consumer<Integer>() {
+                    @Override
+                    public void accept(Integer integer) throws Exception {
+                        Log.i(TAG, "accept: " + integer);
+                        Thread.sleep(5000);
+                    }
+                });
+
     }
 
     /**
@@ -38,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
      */
     private void case06() {
         //all 判断发送的每项数据是否都满足 设置的函数条件
-        Observable.just(1, 2, 3, 34)
+        Observable.just(1, 2, 3, 5)
                 .all(new Predicate<Integer>() {
                     @Override
                     public boolean test(Integer integer) throws Exception {
@@ -196,6 +227,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.i(TAG, "accept: " + s);
             }
         });
+        //注：新合并生成的事件序列顺序是无序的，即 与旧序列发送事件的顺序无关
         Observable.create(new ObservableOnSubscribe<Integer>() {
             @Override
             public void subscribe(ObservableEmitter<Integer> e) throws Exception {
@@ -217,6 +249,36 @@ public class MainActivity extends AppCompatActivity {
         });
         //ConcatMap同上，有序
         //buffer 的使用
+
+        List<Integer> list = new ArrayList<>();
+        list = Arrays.asList(1, 2, 3, 4);
+        Observable.fromIterable(list)
+                .switchMap(new Function<Integer, ObservableSource<String>>() {
+
+                    @Override
+                    public ObservableSource<String> apply(Integer integer) throws Exception {
+                        return Observable.just("integer=" + integer);
+                    }
+                }).subscribe(new Consumer<String>() {
+            @Override
+            public void accept(String s) throws Exception {
+                Log.i(TAG, "accept: " + s);
+            }
+        });
+        Observable.fromIterable(list)
+                .switchMap(new Function<Integer, ObservableSource<String>>() {
+                    @Override
+                    public ObservableSource<String> apply(Integer integer) throws Exception {
+                        return Observable.just("integer=" + integer).subscribeOn(Schedulers.newThread());
+                    }
+                }).subscribe(new Consumer<String>() {
+            @Override
+            public void accept(String s) throws Exception {
+                Log.i(TAG, "accept: " + s);
+            }
+        });
+        //SwitchMap总结：当在同一线程中时，任务是按次序的，一一被执行完。而在不同线程中，如果前一个任务，尚未执行结束，
+        // 就会被后一个任务给取消。所以，最后，打印出来的信息，只有4，而且是在第4条新线程中。
     }
 
     /**
